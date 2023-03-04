@@ -44,14 +44,17 @@ func main() {
 	page, _ := driver.NewPage()
 	tp := TestPage{page}
 	page.Navigate("http://localhost:8000/")
-	os.Create("./captures/ss.png")
-	tp.CapturePage("./captures/ss.png")
-	page.Screenshot("./captures/ss.png")
-	fmt.Println(page.Title())
+	before := "./captures/before.png"
+	after := "./captures/after.png"
+	os.Create(before)
+	os.Create(after)
+	tp.CapturePage(before)
+	tp.CapturePage(after)
+	compareFiles(before, after)
 }
 
-func compare() {
-	diff, percent, err := diff.CompareFiles("./hoge1.png", "./hoge2.png")
+func compareFiles(before, after string) {
+	diff, percent, err := diff.CompareFiles(before, after)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +62,6 @@ func compare() {
 		fmt.Println("Image is same!")
 		return
 	}
-	fmt.Printf("image is diffrent")
 	f, err := os.Create("diff.png")
 	if err != nil {
 		log.Fatal(err)
@@ -67,4 +69,5 @@ func compare() {
 	buf := new(bytes.Buffer)
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
+	fmt.Println("diff has written into diff.png")
 }
