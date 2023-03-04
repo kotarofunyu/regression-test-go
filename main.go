@@ -36,9 +36,16 @@ func (rt *RegressionTest) Run() {
 			os.Create(after)
 			rt.capturePage(before, breakpoint)
 			rt.capturePage(after, breakpoint)
+			// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
+			defer rt.cleanupCaptures(before, after)
 			rt.compareFiles(before, after, path, breakpoint)
 		}
 	}
+}
+
+func (rt *RegressionTest) cleanupCaptures(before, after string) {
+	os.Remove(before)
+	os.Remove(after)
 }
 
 func (rt *RegressionTest) capturePage(filename string, width int) {
@@ -91,7 +98,7 @@ func main() {
 	mytestconf := TestConfig{
 		breakpoints: []int{1200, 768, 384},
 		baseurl:     "http://localhost:8000/",
-		paths:       []string{"", "", ""},
+		paths:       []string{"company", "", ""},
 		initheight:  300,
 	}
 	rt := RegressionTest{
