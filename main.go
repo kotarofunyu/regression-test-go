@@ -8,6 +8,7 @@ import (
 	_ "image/png"
 	"log"
 	"os"
+	"strconv"
 
 	diff "github.com/olegfedoseev/image-diff"
 	agouti "github.com/sclevine/agouti"
@@ -22,6 +23,7 @@ func (tp *TestPage) CapturePage(filename string) {
 	if err := tp.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 		log.Fatal(err)
 	}
+	// TODO: widthはブレイクポイントの値を使うのでここは本当は不要
 	if err := tp.RunScript("return document.body.scrollWidth;", nil, &width); err != nil {
 		log.Fatal(err)
 	}
@@ -40,20 +42,30 @@ func main() {
 		log.Fatal(err)
 	}
 	defer driver.Stop()
-
 	page, _ := driver.NewPage()
 	tp := TestPage{page}
-	page.Navigate("http://localhost:8000/")
-	before := "./captures/before.png"
-	after := "./captures/after.png"
-	os.Create(before)
-	os.Create(after)
-	tp.CapturePage(before)
-	tp.CapturePage(after)
-	compareFiles(before, after)
+	// NOTE: 型キャストの必要があるので最初からintしか指定できないようにしたほうがいいかも
+	bp := []float64{1200, 768, 384}
+	ul := []string{"hoge", "fuga", "foo", "bar"}
+	baseurl := "http://localhost:8000/"
+
+	initHight := 300
+	for _, breakpoint := range bp {
+		page.Size(int(breakpoint), initHight)
+		for _, path := range ul {
+			page.Navigate(baseurl + path)
+			before := "./captures/before-" + path + ".png"
+			after := "./captures/after-" + path + ".png"
+			os.Create(before)
+			os.Create(after)
+			tp.CapturePage(before)
+			tp.CapturePage(after)
+			compareFiles(before, after, path, int(breakpoint))
+		}
+	}
 }
 
-func compareFiles(before, after string) {
+func compareFiles(before, after, path string, breakpoint int) {
 	diff, percent, err := diff.CompareFiles(before, after)
 	if err != nil {
 		log.Fatal(err)
@@ -62,12 +74,13 @@ func compareFiles(before, after string) {
 		fmt.Println("Image is same!")
 		return
 	}
-	f, err := os.Create("diff.png")
+	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	f, err := os.Create(diffName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	buf := new(bytes.Buffer)
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
-	fmt.Println("diff has written into diff.png")
+	fmt.Println("diff has written into" + diffName)
 }
