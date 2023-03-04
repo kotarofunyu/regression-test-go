@@ -30,11 +30,33 @@ func (tp *TestPage) CapturePage(filename string) {
 	tp.Screenshot(filename)
 }
 
+type RegressionTest struct {
+	testConfig TestConfig
+	page       *agouti.Page
+	tp         TestPage
+}
+
 type TestConfig struct {
 	breakpoints []int
 	baseurl     string
 	paths       []string
 	initheight  int
+}
+
+func (rt *RegressionTest) Run() {
+	for _, breakpoint := range rt.testConfig.breakpoints {
+		rt.page.Size(breakpoint, rt.testConfig.initheight)
+		for _, path := range rt.testConfig.paths {
+			rt.page.Navigate(rt.testConfig.baseurl + path)
+			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(before)
+			os.Create(after)
+			rt.tp.CapturePage(before)
+			rt.tp.CapturePage(after)
+			compareFiles(before, after, path, breakpoint)
+		}
+	}
 }
 
 func main() {
@@ -53,22 +75,15 @@ func main() {
 	mytestconf := TestConfig{
 		breakpoints: []int{1200, 768, 384},
 		baseurl:     "http://localhost:8000/",
-		paths:       []string{"hoge", "fuga", "foo", "bar"},
+		paths:       []string{"", "", ""},
 		initheight:  300,
 	}
-	for _, breakpoint := range mytestconf.breakpoints {
-		page.Size(breakpoint, mytestconf.initheight)
-		for _, path := range mytestconf.paths {
-			page.Navigate(mytestconf.baseurl + path)
-			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			os.Create(before)
-			os.Create(after)
-			tp.CapturePage(before)
-			tp.CapturePage(after)
-			compareFiles(before, after, path, breakpoint)
-		}
+	rt := RegressionTest{
+		mytestconf,
+		page,
+		tp,
 	}
+	rt.Run()
 }
 
 func compareFiles(before, after, path string, breakpoint int) {
