@@ -1,0 +1,4 @@
+github.com/olegfedoseev/image-diff v0.0.0-20171116094004-897a4e73dfd6 h1:a/kynVgbdXJQDq3WWTgwL0bHyg4hu4/oIK9UB+Ugvfo=
+github.com/olegfedoseev/image-diff v0.0.0-20171116094004-897a4e73dfd6/go.mod h1:OgMVaRcJ1TgmPHB/MF2YaHOzRxmw6vVG/DquoMhkCiY=
+github.com/sclevine/agouti v3.0.0+incompatible h1:8IBJS6PWz3uTlMP3YBIR5f+KAldcGuOeFkFbUWfBgK4=
+github.com/sclevine/agouti v3.0.0+incompatible/go.mod h1:b4WX9W9L1sfQKXeJf1mUTLZKJ48R1S7H23Ji7oFO5Bw=
