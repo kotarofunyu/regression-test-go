@@ -70,7 +70,7 @@ func (rt *RegressionTest) compareFiles(before, after, path string, breakpoint in
 	fmt.Println("diff has written into " + diffName)
 }
 
-func main() {
+func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	driver := agouti.ChromeDriver(
 		agouti.ChromeOptions("args", []string{
 			"--headless",
@@ -80,8 +80,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer driver.Stop()
 	page, _ := driver.NewPage()
+
+	return page, driver
+}
+
+func main() {
+	page, driver := setupBrowser()
+	defer driver.Stop()
 	mytestconf := TestConfig{
 		breakpoints: []int{1200, 768, 384},
 		baseurl:     "http://localhost:8000/",
