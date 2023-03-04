@@ -44,9 +44,9 @@ func main() {
 	page, _ := driver.NewPage()
 	tp := TestPage{page}
 	page.Navigate("http://localhost:8000/")
-	os.Create("ss.png")
-	tp.CapturePage("ss.png")
-	page.Screenshot("ss.png")
+	os.Create("./captures/ss.png")
+	tp.CapturePage("./captures/ss.png")
+	page.Screenshot("./captures/ss.png")
 	fmt.Println(page.Title())
 }
 
