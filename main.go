@@ -44,14 +44,13 @@ func main() {
 	defer driver.Stop()
 	page, _ := driver.NewPage()
 	tp := TestPage{page}
-	// NOTE: 型キャストの必要があるので最初からintしか指定できないようにしたほうがいいかも
-	bp := []float64{1200, 768, 384}
+	bp := []int{1200, 768, 384}
 	ul := []string{"hoge", "fuga", "foo", "bar"}
 	baseurl := "http://localhost:8000/"
 
 	initHight := 300
 	for _, breakpoint := range bp {
-		page.Size(int(breakpoint), initHight)
+		page.Size(breakpoint, initHight)
 		for _, path := range ul {
 			page.Navigate(baseurl + path)
 			before := "./captures/before-" + path + ".png"
@@ -60,7 +59,7 @@ func main() {
 			os.Create(after)
 			tp.CapturePage(before)
 			tp.CapturePage(after)
-			compareFiles(before, after, path, int(breakpoint))
+			compareFiles(before, after, path, breakpoint)
 		}
 	}
 }
