@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	diff "github.com/olegfedoseev/image-diff"
 	agouti "github.com/sclevine/agouti"
@@ -66,15 +67,18 @@ func (rt *RegressionTest) compareFiles(before, after, path string, breakpoint in
 		fmt.Println("Image is same!")
 		return
 	}
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	f, err := os.Create(diffName)
+	t := time.Now()
+	ft := t.Format("20200101123045")
+	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
+	destDir := "./results/"
+	f, err := os.Create(destDir + diffName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	buf := new(bytes.Buffer)
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
-	fmt.Println("diff has written into " + diffName)
+	fmt.Println("diff has written into " + destDir + diffName)
 }
 
 func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
