@@ -13,14 +13,9 @@ import (
 	agouti "github.com/sclevine/agouti"
 )
 
-type TestPage struct {
-	*agouti.Page
-}
-
 type RegressionTest struct {
 	testConfig TestConfig
 	page       *agouti.Page
-	tp         TestPage
 }
 
 type TestConfig struct {
@@ -87,7 +82,6 @@ func main() {
 	}
 	defer driver.Stop()
 	page, _ := driver.NewPage()
-	tp := TestPage{page}
 	mytestconf := TestConfig{
 		breakpoints: []int{1200, 768, 384},
 		baseurl:     "http://localhost:8000/",
@@ -97,7 +91,6 @@ func main() {
 	rt := RegressionTest{
 		mytestconf,
 		page,
-		tp,
 	}
 	rt.Run()
 }
