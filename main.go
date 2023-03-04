@@ -17,19 +17,6 @@ type TestPage struct {
 	*agouti.Page
 }
 
-func (tp *TestPage) CapturePage(filename string) {
-	var width, height int
-	if err := tp.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
-		log.Fatal(err)
-	}
-	// TODO: widthはブレイクポイントの値を使うのでここは本当は不要
-	if err := tp.RunScript("return document.body.scrollWidth;", nil, &width); err != nil {
-		log.Fatal(err)
-	}
-	tp.Size(width, height)
-	tp.Screenshot(filename)
-}
-
 type RegressionTest struct {
 	testConfig TestConfig
 	page       *agouti.Page
@@ -52,11 +39,40 @@ func (rt *RegressionTest) Run() {
 			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 			os.Create(before)
 			os.Create(after)
-			rt.tp.CapturePage(before)
-			rt.tp.CapturePage(after)
-			compareFiles(before, after, path, breakpoint)
+			rt.capturePage(before, breakpoint)
+			rt.capturePage(after, breakpoint)
+			rt.compareFiles(before, after, path, breakpoint)
 		}
 	}
+}
+
+func (rt *RegressionTest) capturePage(filename string, width int) {
+	var height int
+	if err := rt.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+		log.Fatal(err)
+	}
+	rt.page.Size(width, height)
+	rt.page.Screenshot(filename)
+}
+
+func (rt *RegressionTest) compareFiles(before, after, path string, breakpoint int) {
+	diff, percent, err := diff.CompareFiles(before, after)
+	if err != nil {
+		log.Fatal(err, before, after)
+	}
+	if percent == 0.0 {
+		fmt.Println("Image is same!")
+		return
+	}
+	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	f, err := os.Create(diffName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf := new(bytes.Buffer)
+	png.Encode(buf, diff)
+	f.Write(buf.Bytes())
+	fmt.Println("diff has written into " + diffName)
 }
 
 func main() {
@@ -84,24 +100,4 @@ func main() {
 		tp,
 	}
 	rt.Run()
-}
-
-func compareFiles(before, after, path string, breakpoint int) {
-	diff, percent, err := diff.CompareFiles(before, after)
-	if err != nil {
-		log.Fatal(err, before, after)
-	}
-	if percent == 0.0 {
-		fmt.Println("Image is same!")
-		return
-	}
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	f, err := os.Create(diffName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	buf := new(bytes.Buffer)
-	png.Encode(buf, diff)
-	f.Write(buf.Bytes())
-	fmt.Println("diff has written into" + diffName)
 }
