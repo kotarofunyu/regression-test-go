@@ -99,6 +99,7 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 func main() {
 	page, driver := setupBrowser()
 	defer driver.Stop()
+	// TODO: CLIやHTTP等のインターフェースを介して渡せるように調整する
 	mytestconf := TestConfig{
 		breakpoints: []int{1200, 768, 384},
 		baseurl:     "http://localhost:8000/",
