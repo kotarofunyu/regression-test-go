@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "image/jpeg"
 	"image/png"
-	_ "image/png"
 	"log"
 	"os"
 	"strconv"
@@ -31,6 +30,13 @@ func (tp *TestPage) CapturePage(filename string) {
 	tp.Screenshot(filename)
 }
 
+type TestConfig struct {
+	breakpoints []int
+	baseurl     string
+	paths       []string
+	initheight  int
+}
+
 func main() {
 	driver := agouti.ChromeDriver(
 		agouti.ChromeOptions("args", []string{
@@ -44,17 +50,18 @@ func main() {
 	defer driver.Stop()
 	page, _ := driver.NewPage()
 	tp := TestPage{page}
-	bp := []int{1200, 768, 384}
-	ul := []string{"hoge", "fuga", "foo", "bar"}
-	baseurl := "http://localhost:8000/"
-
-	initHight := 300
-	for _, breakpoint := range bp {
-		page.Size(breakpoint, initHight)
-		for _, path := range ul {
-			page.Navigate(baseurl + path)
-			before := "./captures/before-" + path + ".png"
-			after := "./captures/after-" + path + ".png"
+	mytestconf := TestConfig{
+		breakpoints: []int{1200, 768, 384},
+		baseurl:     "http://localhost:8000/",
+		paths:       []string{"hoge", "fuga", "foo", "bar"},
+		initheight:  300,
+	}
+	for _, breakpoint := range mytestconf.breakpoints {
+		page.Size(breakpoint, mytestconf.initheight)
+		for _, path := range mytestconf.paths {
+			page.Navigate(mytestconf.baseurl + path)
+			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 			os.Create(before)
 			os.Create(after)
 			tp.CapturePage(before)
@@ -67,7 +74,7 @@ func main() {
 func compareFiles(before, after, path string, breakpoint int) {
 	diff, percent, err := diff.CompareFiles(before, after)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, before, after)
 	}
 	if percent == 0.0 {
 		fmt.Println("Image is same!")
