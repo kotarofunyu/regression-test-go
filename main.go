@@ -98,18 +98,22 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	return page, driver
 }
 
-func main() {
+func setupArgs() (baseUrl string, paths []string, breakpoints []int) {
 	b := flag.String("base_url", "", "Testing target url")
 	p := flag.String("paths", "", "paths")
 	bp := flag.String("breakpoints", "", "breakpoints")
 	flag.Parse()
-	baseUrl := *b
-	var breakpoints []int
+	baseUrl = *b
+	paths = strings.Split(*p, ",")
 	for _, v := range strings.Split(*bp, ",") {
 		atoi, _ := strconv.Atoi(v)
 		breakpoints = append(breakpoints, atoi)
 	}
-	paths := strings.Split(*p, ",")
+	return baseUrl, paths, breakpoints
+}
+
+func main() {
+	baseUrl, paths, breakpoints := setupArgs()
 	page, driver := setupBrowser()
 	defer driver.Stop()
 	mytestconf := TestConfig{
