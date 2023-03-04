@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	_ "image/jpeg"
 	"image/png"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	diff "github.com/olegfedoseev/image-diff"
@@ -97,13 +99,23 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 }
 
 func main() {
+	b := flag.String("base_url", "", "Testing target url")
+	p := flag.String("paths", "", "paths")
+	bp := flag.String("breakpoints", "", "breakpoints")
+	flag.Parse()
+	baseUrl := *b
+	var breakpoints []int
+	for _, v := range strings.Split(*bp, ",") {
+		atoi, _ := strconv.Atoi(v)
+		breakpoints = append(breakpoints, atoi)
+	}
+	paths := strings.Split(*p, ",")
 	page, driver := setupBrowser()
 	defer driver.Stop()
-	// TODO: CLIやHTTP等のインターフェースを介して渡せるように調整する
 	mytestconf := TestConfig{
-		breakpoints: []int{1200, 768, 384},
-		baseurl:     "http://localhost:8000/",
-		paths:       []string{"company", "", ""},
+		breakpoints: breakpoints,
+		baseurl:     baseUrl,
+		paths:       paths,
 		initheight:  300,
 	}
 	rt := RegressionTest{
