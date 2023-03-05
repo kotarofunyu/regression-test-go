@@ -32,47 +32,39 @@ type TestConfig struct {
 func (rt *RegressionTest) Run() {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	for _, breakpoint := range rt.testConfig.breakpoints {
-		rt.page.Size(breakpoint, rt.testConfig.initheight)
-		for _, path := range rt.testConfig.paths {
-			wg.Add(1)
-			go rt.fuga(path, breakpoint, &wg, &mu)
-		}
-		wg.Wait()
+	for _, path := range rt.testConfig.paths {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, path string) {
+			fmt.Println(path)
+			mu.Lock()
+			defer wg.Done()
+			defer mu.Unlock()
+			rt.page.Navigate(rt.testConfig.baseurl + path)
+			for _, breakpoint := range rt.testConfig.breakpoints {
+				fmt.Println(path, breakpoint)
+				before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+				after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+				os.Create(before)
+				os.Create(after)
+				var height int
+				if err := rt.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+					log.Fatal(err)
+				}
+				rt.page.Size(breakpoint, height)
+				rt.page.Screenshot(before)
+				rt.page.Screenshot(after)
+				rt.compareFiles(before, after, path, breakpoint)
+			}
+		}(&wg, path)
 	}
+	wg.Wait()
 	// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
 	// defer rt.cleanupCaptures(before, after)
-}
-
-func (rt *RegressionTest) fuga(path string, breakpoint int, wg *sync.WaitGroup, mu *sync.Mutex) {
-	defer wg.Done()
-	mu.Lock()
-	defer mu.Unlock()
-	rt.page.Navigate(rt.testConfig.baseurl + path)
-	before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	rt.hoge(before, breakpoint)
-	rt.hoge(after, breakpoint)
-	rt.compareFiles(before, after, path, breakpoint)
-}
-
-func (rt *RegressionTest) hoge(filename string, breakpoint int) {
-	os.Create(filename)
-	rt.capturePage(filename, breakpoint)
 }
 
 func (rt *RegressionTest) cleanupCaptures(before, after string) {
 	os.Remove(before)
 	os.Remove(after)
-}
-
-func (rt *RegressionTest) capturePage(filename string, width int) {
-	var height int
-	if err := rt.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
-		log.Fatal(err)
-	}
-	rt.page.Size(width, height)
-	rt.page.Screenshot(filename)
 }
 
 func (rt *RegressionTest) compareFiles(before, after, path string, breakpoint int) {
