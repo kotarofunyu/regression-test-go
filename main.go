@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	diff "github.com/olegfedoseev/image-diff"
@@ -35,15 +36,23 @@ func (rt *RegressionTest) Run() {
 			rt.page.Navigate(rt.testConfig.baseurl + path)
 			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			os.Create(before)
-			os.Create(after)
-			rt.capturePage(before, breakpoint)
-			rt.capturePage(after, breakpoint)
+			var wg sync.WaitGroup
+			wg.Add(2)
+			go rt.hoge(before, breakpoint, &wg)
+			go rt.hoge(after, breakpoint, &wg)
+			wg.Wait()
 			// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
 			defer rt.cleanupCaptures(before, after)
+			fmt.Println("compare files")
 			rt.compareFiles(before, after, path, breakpoint)
 		}
 	}
+}
+
+func (rt *RegressionTest) hoge(filename string, breakpoint int, wg *sync.WaitGroup) {
+	os.Create(filename)
+	rt.capturePage(filename, breakpoint)
+	wg.Done()
 }
 
 func (rt *RegressionTest) cleanupCaptures(before, after string) {
@@ -113,6 +122,7 @@ func setupArgs() (baseUrl string, paths []string, breakpoints []int) {
 }
 
 func main() {
+	now := time.Now()
 	baseUrl, paths, breakpoints := setupArgs()
 	page, driver := setupBrowser()
 	defer driver.Stop()
@@ -127,4 +137,5 @@ func main() {
 		page,
 	}
 	rt.Run()
+	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
 }
