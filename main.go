@@ -37,14 +37,12 @@ func (rt *RegressionTest) Run() {
 	for _, path := range rt.testConfig.paths {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, path string) {
-			fmt.Println(path)
 			// NOTE: goroutine間でagouti.Pageを共有するので排他制御が必要
 			mu.Lock()
 			defer wg.Done()
 			defer mu.Unlock()
 			rt.page.Navigate(rt.testConfig.baseurl + path)
 			for _, breakpoint := range rt.testConfig.breakpoints {
-				fmt.Println(path, breakpoint)
 				before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 				after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 				os.Create(before)
