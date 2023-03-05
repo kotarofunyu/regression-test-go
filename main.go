@@ -30,6 +30,8 @@ type TestConfig struct {
 }
 
 func (rt *RegressionTest) Run() {
+	os.Mkdir("results/", os.ModePerm)
+	os.Mkdir("captures/", os.ModePerm)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	for _, path := range rt.testConfig.paths {
