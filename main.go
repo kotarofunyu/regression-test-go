@@ -36,6 +36,7 @@ func (rt *RegressionTest) Run() {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, path string) {
 			fmt.Println(path)
+			// NOTE: goroutine間でagouti.Pageを共有するので排他制御が必要
 			mu.Lock()
 			defer wg.Done()
 			defer mu.Unlock()
