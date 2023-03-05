@@ -30,29 +30,35 @@ type TestConfig struct {
 }
 
 func (rt *RegressionTest) Run() {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for _, breakpoint := range rt.testConfig.breakpoints {
 		rt.page.Size(breakpoint, rt.testConfig.initheight)
 		for _, path := range rt.testConfig.paths {
-			rt.page.Navigate(rt.testConfig.baseurl + path)
-			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			var wg sync.WaitGroup
-			wg.Add(2)
-			go rt.hoge(before, breakpoint, &wg)
-			go rt.hoge(after, breakpoint, &wg)
-			wg.Wait()
-			// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
-			defer rt.cleanupCaptures(before, after)
-			fmt.Println("compare files")
-			rt.compareFiles(before, after, path, breakpoint)
+			wg.Add(1)
+			go rt.fuga(path, breakpoint, &wg, &mu)
 		}
+		wg.Wait()
 	}
+	// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
+	// defer rt.cleanupCaptures(before, after)
 }
 
-func (rt *RegressionTest) hoge(filename string, breakpoint int, wg *sync.WaitGroup) {
+func (rt *RegressionTest) fuga(path string, breakpoint int, wg *sync.WaitGroup, mu *sync.Mutex) {
+	defer wg.Done()
+	mu.Lock()
+	defer mu.Unlock()
+	rt.page.Navigate(rt.testConfig.baseurl + path)
+	before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	rt.hoge(before, breakpoint)
+	rt.hoge(after, breakpoint)
+	rt.compareFiles(before, after, path, breakpoint)
+}
+
+func (rt *RegressionTest) hoge(filename string, breakpoint int) {
 	os.Create(filename)
 	rt.capturePage(filename, breakpoint)
-	wg.Done()
 }
 
 func (rt *RegressionTest) cleanupCaptures(before, after string) {
