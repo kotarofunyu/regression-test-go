@@ -30,9 +30,16 @@ type GitComparison struct {
 	afterbranch  string
 	baseurl      string
 	paths        []string
-	initheight   int
 	breakpoints  []int
 	page         *agouti.Page
+}
+
+type UrlComparison struct {
+	beforebaseurl string
+	afterbaseurl  string
+	paths         []string
+	breakpoints   []int
+	page          *agouti.Page
 }
 
 func (gc *GitComparison) Run() {
@@ -75,6 +82,30 @@ func (gc *GitComparison) Run() {
 	wg.Wait()
 	// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
 	// defer rt.cleanupCaptures(before, after)
+}
+
+func (uc *UrlComparison) Run() {
+	os.Mkdir("results/", os.ModePerm)
+	os.Mkdir("captures/", os.ModePerm)
+	for _, path := range uc.paths {
+		for _, breakpoint := range uc.breakpoints {
+			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(before)
+			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(after)
+			uc.page.Navigate(uc.beforebaseurl + path)
+			var height int
+			if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+				log.Fatal(err)
+			}
+			uc.page.Size(breakpoint, height)
+			uc.page.Screenshot(before)
+			uc.page.Navigate(uc.afterbaseurl + path)
+			uc.page.Size(breakpoint, height)
+			uc.page.Screenshot(after)
+			compareFiles(before, after, path, breakpoint)
+		}
+	}
 }
 
 func cleanupCaptures(before, after string) {
@@ -120,13 +151,15 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	return page, driver
 }
 
-func setupArgs() (baseUrl string, paths []string, breakpoints []int, gitpath, beforebranch, afterbranch string) {
+func setupArgs() (baseUrl string, paths []string, breakpoints []int, gitpath, beforebranch, afterbranch, beforeurl, afterurl string) {
 	b := flag.String("base_url", "", "Testing target url")
 	p := flag.String("paths", "", "paths")
 	bp := flag.String("breakpoints", "", "breakpoints")
 	gp := flag.String("gitpath", "", "git repository path")
 	bb := flag.String("beforebranch", "main", "the git branch which is base")
 	ab := flag.String("afterbranch", "", "the git branch which some changes added")
+	bu := flag.String("beforeurl", "", "")
+	au := flag.String("afterurl", "", "")
 	flag.Parse()
 	baseUrl = *b
 	paths = strings.Split(*p, ",")
@@ -137,6 +170,8 @@ func setupArgs() (baseUrl string, paths []string, breakpoints []int, gitpath, be
 	beforebranch = *bb
 	afterbranch = *ab
 	gitpath = *gp
+	beforeurl = *bu
+	afterurl = *au
 	return
 }
 
@@ -154,27 +189,38 @@ func checkoutGitBranch(wt *git.Worktree, destbranch string) error {
 
 func main() {
 	now := time.Now()
-	baseUrl, paths, breakpoints, gitpath, beforebranch, afterbranch := setupArgs()
+	baseUrl, paths, breakpoints, gitpath, beforebranch, afterbranch, beforeurl, afterurl := setupArgs()
 	page, driver := setupBrowser()
 	defer driver.Stop()
-	r, err := git.PlainOpen(gitpath)
-	if err != nil {
-		log.Fatal(err)
+
+	if len(gitpath) > 0 {
+		r, err := git.PlainOpen(gitpath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		wt, err := r.Worktree()
+		if err != nil {
+			log.Fatal(err)
+		}
+		gc := GitComparison{
+			repository:   wt,
+			beforebranch: beforebranch,
+			afterbranch:  afterbranch,
+			baseurl:      baseUrl,
+			paths:        paths,
+			breakpoints:  breakpoints,
+			page:         page,
+		}
+		gc.Run()
+	} else {
+		uc := UrlComparison{
+			beforebaseurl: beforeurl,
+			afterbaseurl:  afterurl,
+			paths:         paths,
+			breakpoints:   breakpoints,
+			page:          page,
+		}
+		uc.Run()
 	}
-	wt, err := r.Worktree()
-	if err != nil {
-		log.Fatal(err)
-	}
-	gc := GitComparison{
-		repository:   wt,
-		beforebranch: beforebranch,
-		afterbranch:  afterbranch,
-		baseurl:      baseUrl,
-		paths:        paths,
-		initheight:   300,
-		breakpoints:  breakpoints,
-		page:         page,
-	}
-	gc.Run()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
 }
