@@ -1,18 +1,13 @@
 package gitcomparison
 
 import (
-	"bytes"
-	"fmt"
-	"image/png"
 	"log"
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	diff "github.com/olegfedoseev/image-diff"
 	"github.com/sclevine/agouti"
 )
 
@@ -46,7 +41,7 @@ func NewGitComparison(gitpath, beforebranch, afterbranch, baseUrl string, paths 
 	}
 }
 
-func (gc *GitComparison) Run() {
+func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
 	os.Mkdir("results/", os.ModePerm)
 	os.Mkdir("captures/", os.ModePerm)
 	var wg sync.WaitGroup
@@ -79,7 +74,7 @@ func (gc *GitComparison) Run() {
 				}
 				gc.page.Refresh()
 				gc.page.Screenshot(after)
-				compareFiles(before, after, path, breakpoint)
+				comparefunc(before, after, path, breakpoint)
 			}
 		}(&wg, path)
 	}
@@ -98,27 +93,4 @@ func checkoutGitBranch(wt *git.Worktree, destbranch string) error {
 		return err
 	}
 	return nil
-}
-
-func compareFiles(before, after, path string, breakpoint int) {
-	diff, percent, err := diff.CompareFiles(before, after)
-	if err != nil {
-		log.Fatal(err, before, after)
-	}
-	if percent == 0.0 {
-		fmt.Println("Image is same!")
-		return
-	}
-	t := time.Now()
-	ft := t.Format("20200101123045")
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
-	destDir := "./results/"
-	f, err := os.Create(destDir + diffName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	buf := new(bytes.Buffer)
-	png.Encode(buf, diff)
-	f.Write(buf.Bytes())
-	fmt.Println("diff has written into " + destDir + diffName)
 }

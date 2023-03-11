@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	_ "image/jpeg"
+	"image/png"
 	"log"
 	"os"
 	"strconv"
@@ -12,20 +14,24 @@ import (
 
 	"github.com/kotarofunyu/regression-test-go/gitcomparison"
 	"github.com/kotarofunyu/regression-test-go/urlcomparison"
+	diff "github.com/olegfedoseev/image-diff"
 
 	agouti "github.com/sclevine/agouti"
 )
 
 type Comparer interface {
-	Run()
+	Run(comparefunc func(before, after, path string, breakpoint int))
 }
 
 type ComparisonTesting struct {
-	comparer Comparer
+	comparer    Comparer
+	breakpoints []int
+	paths       []string
+	page        *agouti.Page
 }
 
 func (ct *ComparisonTesting) Compare() {
-	ct.comparer.Run()
+	ct.comparer.Run(compareFiles)
 }
 
 func cleanupCaptures(before, after string) {
@@ -86,4 +92,27 @@ func main() {
 	}
 	ct.Compare()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
+}
+
+func compareFiles(before, after, path string, breakpoint int) {
+	diff, percent, err := diff.CompareFiles(before, after)
+	if err != nil {
+		log.Fatal(err, before, after)
+	}
+	if percent == 0.0 {
+		fmt.Println("Image is same!")
+		return
+	}
+	t := time.Now()
+	ft := t.Format("20200101123045")
+	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
+	destDir := "./results/"
+	f, err := os.Create(destDir + diffName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf := new(bytes.Buffer)
+	png.Encode(buf, diff)
+	f.Write(buf.Bytes())
+	fmt.Println("diff has written into " + destDir + diffName)
 }
