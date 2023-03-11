@@ -20,60 +20,55 @@ import (
 	agouti "github.com/sclevine/agouti"
 )
 
-type RegressionTest struct {
-	testConfig TestConfig
-	page       *agouti.Page
-	repository *git.Worktree
+type Comparer interface {
+	Run()
 }
 
-type TestConfig struct {
-	breakpoints []int
-	baseurl     string
-	paths       []string
-	initheight  int
-	gitconf     GitConfig
-}
-
-type GitConfig struct {
-	path         string
+type GitComparison struct {
+	repository   *git.Worktree
 	beforebranch string
 	afterbranch  string
+	baseurl      string
+	paths        []string
+	initheight   int
+	breakpoints  []int
+	page         *agouti.Page
 }
 
-func (rt *RegressionTest) Run() {
+func (gc *GitComparison) Run() {
 	os.Mkdir("results/", os.ModePerm)
 	os.Mkdir("captures/", os.ModePerm)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	for _, path := range rt.testConfig.paths {
+	for _, path := range gc.paths {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, path string) {
 			// NOTE: goroutine間でagouti.Pageを共有するので排他制御が必要
 			mu.Lock()
 			defer wg.Done()
 			defer mu.Unlock()
-			rt.page.Navigate(rt.testConfig.baseurl + path)
-			for _, breakpoint := range rt.testConfig.breakpoints {
+			gc.page.Navigate(gc.baseurl + path)
+			for _, breakpoint := range gc.breakpoints {
 				before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 				after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
 				os.Create(before)
 				os.Create(after)
 				var height int
-				if err := rt.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+				if err := gc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 					log.Fatal(err)
 				}
-				rt.page.Size(breakpoint, height)
-				if err := checkoutGitBranch(rt.repository, rt.testConfig.gitconf.beforebranch); err != nil {
+				gc.page.Size(breakpoint, height)
+				if err := checkoutGitBranch(gc.repository, gc.beforebranch); err != nil {
 					log.Fatal(err)
 				}
-				rt.page.Refresh()
-				rt.page.Screenshot(before)
-				if err := checkoutGitBranch(rt.repository, rt.testConfig.gitconf.afterbranch); err != nil {
+				gc.page.Refresh()
+				gc.page.Screenshot(before)
+				if err := checkoutGitBranch(gc.repository, gc.afterbranch); err != nil {
 					log.Fatal(err)
 				}
-				rt.page.Refresh()
-				rt.page.Screenshot(after)
-				rt.compareFiles(before, after, path, breakpoint)
+				gc.page.Refresh()
+				gc.page.Screenshot(after)
+				compareFiles(before, after, path, breakpoint)
 			}
 		}(&wg, path)
 	}
@@ -82,12 +77,12 @@ func (rt *RegressionTest) Run() {
 	// defer rt.cleanupCaptures(before, after)
 }
 
-func (rt *RegressionTest) cleanupCaptures(before, after string) {
+func cleanupCaptures(before, after string) {
 	os.Remove(before)
 	os.Remove(after)
 }
 
-func (rt *RegressionTest) compareFiles(before, after, path string, breakpoint int) {
+func compareFiles(before, after, path string, breakpoint int) {
 	diff, percent, err := diff.CompareFiles(before, after)
 	if err != nil {
 		log.Fatal(err, before, after)
@@ -162,19 +157,7 @@ func main() {
 	baseUrl, paths, breakpoints, gitpath, beforebranch, afterbranch := setupArgs()
 	page, driver := setupBrowser()
 	defer driver.Stop()
-	gitconf := GitConfig{
-		path:         gitpath,
-		beforebranch: beforebranch,
-		afterbranch:  afterbranch,
-	}
-	mytestconf := TestConfig{
-		breakpoints: breakpoints,
-		baseurl:     baseUrl,
-		paths:       paths,
-		initheight:  300,
-		gitconf:     gitconf,
-	}
-	r, err := git.PlainOpen(gitconf.path)
+	r, err := git.PlainOpen(gitpath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -182,11 +165,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rt := RegressionTest{
-		mytestconf,
-		page,
-		wt,
+	gc := GitComparison{
+		repository:   wt,
+		beforebranch: beforebranch,
+		afterbranch:  afterbranch,
+		baseurl:      baseUrl,
+		paths:        paths,
+		initheight:   300,
+		breakpoints:  breakpoints,
+		page:         page,
 	}
-	rt.Run()
+	gc.Run()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
 }
