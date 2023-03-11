@@ -35,6 +35,15 @@ type GitComparison struct {
 	page         *agouti.Page
 }
 
+type UrlComparison struct {
+	beforebaseurl string
+	afterbaseurl  string
+	paths         []string
+	initheight    int
+	breakpoints   []int
+	page          *agouti.Page
+}
+
 func (gc *GitComparison) Run() {
 	os.Mkdir("results/", os.ModePerm)
 	os.Mkdir("captures/", os.ModePerm)
