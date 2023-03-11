@@ -20,6 +20,10 @@ type Comparer interface {
 	Run()
 }
 
+type ComparisonTesting struct {
+	comparer Comparer
+}
+
 func cleanupCaptures(before, after string) {
 	os.Remove(before)
 	os.Remove(after)
@@ -70,12 +74,12 @@ func main() {
 	page, driver := setupBrowser()
 	defer driver.Stop()
 
-	var comparer Comparer
+	ct := ComparisonTesting{}
 	if len(gitpath) > 0 {
-		comparer = gitcomparison.NewGitComparison(gitpath, beforebranch, afterbranch, baseUrl, paths, breakpoints, page)
+		ct.comparer = gitcomparison.NewGitComparison(gitpath, beforebranch, afterbranch, baseUrl, paths, breakpoints, page)
 	} else {
-		comparer = urlcomparison.NewUrlComparison(beforeurl, afterurl, paths, breakpoints, page)
+		ct.comparer = urlcomparison.NewUrlComparison(beforeurl, afterurl, paths, breakpoints, page)
 	}
-	comparer.Run()
+	ct.comparer.Run()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
 }
