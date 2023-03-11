@@ -30,7 +30,6 @@ type GitComparison struct {
 	afterbranch  string
 	baseurl      string
 	paths        []string
-	initheight   int
 	breakpoints  []int
 	page         *agouti.Page
 }
@@ -39,7 +38,6 @@ type UrlComparison struct {
 	beforebaseurl string
 	afterbaseurl  string
 	paths         []string
-	initheight    int
 	breakpoints   []int
 	page          *agouti.Page
 }
@@ -210,7 +208,6 @@ func main() {
 			afterbranch:  afterbranch,
 			baseurl:      baseUrl,
 			paths:        paths,
-			initheight:   300,
 			breakpoints:  breakpoints,
 			page:         page,
 		}
@@ -220,7 +217,6 @@ func main() {
 			beforebaseurl: beforeurl,
 			afterbaseurl:  afterurl,
 			paths:         paths,
-			initheight:    300,
 			breakpoints:   breakpoints,
 			page:          page,
 		}
