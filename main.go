@@ -24,6 +24,10 @@ type ComparisonTesting struct {
 	comparer Comparer
 }
 
+func (ct *ComparisonTesting) Compare() {
+	ct.comparer.Run()
+}
+
 func cleanupCaptures(before, after string) {
 	os.Remove(before)
 	os.Remove(after)
@@ -80,6 +84,6 @@ func main() {
 	} else {
 		ct.comparer = urlcomparison.NewUrlComparison(beforeurl, afterurl, paths, breakpoints, page)
 	}
-	ct.comparer.Run()
+	ct.Compare()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
 }
