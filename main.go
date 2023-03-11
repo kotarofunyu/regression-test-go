@@ -13,6 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+
 	diff "github.com/olegfedoseev/image-diff"
 	agouti "github.com/sclevine/agouti"
 )
@@ -20,6 +23,7 @@ import (
 type RegressionTest struct {
 	testConfig TestConfig
 	page       *agouti.Page
+	repository *git.Worktree
 }
 
 type TestConfig struct {
@@ -27,6 +31,13 @@ type TestConfig struct {
 	baseurl     string
 	paths       []string
 	initheight  int
+	gitconf     GitConfig
+}
+
+type GitConfig struct {
+	path         string
+	beforebranch string
+	afterbranch  string
 }
 
 func (rt *RegressionTest) Run() {
@@ -52,7 +63,15 @@ func (rt *RegressionTest) Run() {
 					log.Fatal(err)
 				}
 				rt.page.Size(breakpoint, height)
+				if err := checkoutGitBranch(rt.repository, rt.testConfig.gitconf.beforebranch); err != nil {
+					log.Fatal(err)
+				}
+				rt.page.Refresh()
 				rt.page.Screenshot(before)
+				if err := checkoutGitBranch(rt.repository, rt.testConfig.gitconf.afterbranch); err != nil {
+					log.Fatal(err)
+				}
+				rt.page.Refresh()
 				rt.page.Screenshot(after)
 				rt.compareFiles(before, after, path, breakpoint)
 			}
@@ -106,10 +125,13 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	return page, driver
 }
 
-func setupArgs() (baseUrl string, paths []string, breakpoints []int) {
+func setupArgs() (baseUrl string, paths []string, breakpoints []int, gitpath, beforebranch, afterbranch string) {
 	b := flag.String("base_url", "", "Testing target url")
 	p := flag.String("paths", "", "paths")
 	bp := flag.String("breakpoints", "", "breakpoints")
+	gp := flag.String("gitpath", "", "git repository path")
+	bb := flag.String("beforebranch", "main", "the git branch which is base")
+	ab := flag.String("afterbranch", "", "the git branch which some changes added")
 	flag.Parse()
 	baseUrl = *b
 	paths = strings.Split(*p, ",")
@@ -117,23 +139,53 @@ func setupArgs() (baseUrl string, paths []string, breakpoints []int) {
 		atoi, _ := strconv.Atoi(v)
 		breakpoints = append(breakpoints, atoi)
 	}
-	return baseUrl, paths, breakpoints
+	beforebranch = *bb
+	afterbranch = *ab
+	gitpath = *gp
+	return
+}
+
+func checkoutGitBranch(wt *git.Worktree, destbranch string) error {
+	err := wt.Checkout(
+		&git.CheckoutOptions{
+			Branch: plumbing.NewBranchReferenceName(destbranch),
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
 	now := time.Now()
-	baseUrl, paths, breakpoints := setupArgs()
+	baseUrl, paths, breakpoints, gitpath, beforebranch, afterbranch := setupArgs()
 	page, driver := setupBrowser()
 	defer driver.Stop()
+	gitconf := GitConfig{
+		path:         gitpath,
+		beforebranch: beforebranch,
+		afterbranch:  afterbranch,
+	}
 	mytestconf := TestConfig{
 		breakpoints: breakpoints,
 		baseurl:     baseUrl,
 		paths:       paths,
 		initheight:  300,
+		gitconf:     gitconf,
+	}
+	r, err := git.PlainOpen(gitconf.path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wt, err := r.Worktree()
+	if err != nil {
+		log.Fatal(err)
 	}
 	rt := RegressionTest{
 		mytestconf,
 		page,
+		wt,
 	}
 	rt.Run()
 	fmt.Printf("Completed in: %vms\n", time.Since(now).Milliseconds())
