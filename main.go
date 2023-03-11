@@ -86,6 +86,30 @@ func (gc *GitComparison) Run() {
 	// defer rt.cleanupCaptures(before, after)
 }
 
+func (uc *UrlComparison) Run() {
+	os.Mkdir("results/", os.ModePerm)
+	os.Mkdir("captures/", os.ModePerm)
+	for _, path := range uc.paths {
+		for _, breakpoint := range uc.breakpoints {
+			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(before)
+			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(after)
+			uc.page.Navigate(uc.beforebaseurl + path)
+			var height int
+			if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+				log.Fatal(err)
+			}
+			uc.page.Size(breakpoint, height)
+			uc.page.Screenshot(before)
+			uc.page.Navigate(uc.afterbaseurl + path)
+			uc.page.Size(breakpoint, height)
+			uc.page.Screenshot(after)
+			compareFiles(before, after, path, breakpoint)
+		}
+	}
+}
+
 func cleanupCaptures(before, after string) {
 	os.Remove(before)
 	os.Remove(after)
