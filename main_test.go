@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestCompareFiles(t *testing.T) {
+func Test_compareFiles(t *testing.T) {
 	before := "./testdata/sample.png"
 	after := "./testdata/sample_copy.png"
 	path := "./testdata"
