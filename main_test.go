@@ -1,26 +1,26 @@
 package main
 
-import "testing"
+import (
+	"io/ioutil"
+	"testing"
+)
 
-func TestMain(t *testing.T) {
-
-	page, driver := setupBrowser()
-	defer driver.Stop()
-	mytestconf := TestConfig{
-		breakpoints: []int{1200},
-		baseurl:     "http://localhost:8000/",
-		paths:       []string{""},
-		initheight:  300,
+func TestCompareFiles(t *testing.T) {
+	before := "./testdata/sample.png"
+	after := "./testdata/sample_copy.png"
+	path := "./testdata"
+	breakpoint := 768
+	compareFiles(before, after, path, breakpoint)
+	all, _ := ioutil.ReadDir("./")
+	var exits bool
+	for _, e := range all {
+		if e.Name() == "results" {
+			exits = true
+			return
+		}
 	}
-	rt := RegressionTest{
-		mytestconf,
-		page,
-	}
-	rt.Run()
-	// URLへアクセス
-	// 指定したブレイクポイントで繰り返す
-	// パスごとにbefore/afterのスクショを撮って比較する
-	// 違いがあれば出力する
 
-	//
+	if exits != true {
+		t.Errorf("error: %#v", exits)
+	}
 }
