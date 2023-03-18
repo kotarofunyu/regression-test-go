@@ -54,15 +54,18 @@ func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	return page, driver
 }
 
+var (
+	b  = flag.String("base_url", "", "Testing target url")
+	p  = flag.String("paths", "", "paths")
+	bp = flag.String("breakpoints", "", "breakpoints")
+	gp = flag.String("gitpath", "", "git repository path")
+	bb = flag.String("beforebranch", "main", "the git branch which is base")
+	ab = flag.String("afterbranch", "", "the git branch which some changes added")
+	bu = flag.String("beforeurl", "", "")
+	au = flag.String("afterurl", "", "")
+)
+
 func setupArgs() (baseUrl string, paths []string, breakpoints []int, gitpath, beforebranch, afterbranch, beforeurl, afterurl string) {
-	b := flag.String("base_url", "", "Testing target url")
-	p := flag.String("paths", "", "paths")
-	bp := flag.String("breakpoints", "", "breakpoints")
-	gp := flag.String("gitpath", "", "git repository path")
-	bb := flag.String("beforebranch", "main", "the git branch which is base")
-	ab := flag.String("afterbranch", "", "the git branch which some changes added")
-	bu := flag.String("beforeurl", "", "")
-	au := flag.String("afterurl", "", "")
 	flag.Parse()
 	baseUrl = *b
 	paths = strings.Split(*p, ",")
