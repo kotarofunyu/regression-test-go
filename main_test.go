@@ -1,26 +1,110 @@
 package main
 
-import "testing"
+import (
+	"flag"
+	"io/fs"
+	"io/ioutil"
+	"reflect"
+	"testing"
+)
 
-func TestMain(t *testing.T) {
-
-	page, driver := setupBrowser()
-	defer driver.Stop()
-	mytestconf := TestConfig{
-		breakpoints: []int{1200},
-		baseurl:     "http://localhost:8000/",
-		paths:       []string{""},
-		initheight:  300,
+func Test_compareFiles(t *testing.T) {
+	cases := []struct {
+		before     string
+		after      string
+		path       string
+		breakpoint int
+		diff       bool
+	}{
+		{
+			before:     "./testdata/sample.png",
+			after:      "./testdata/sample_copy.png",
+			path:       "sample",
+			breakpoint: 768,
+			diff:       false,
+		},
+		{
+			before:     "./testdata/sample.png",
+			after:      "./testdata/sample_diff.png",
+			path:       "sample",
+			breakpoint: 768,
+			diff:       true,
+		},
 	}
-	rt := RegressionTest{
-		mytestconf,
-		page,
-	}
-	rt.Run()
-	// URLへアクセス
-	// 指定したブレイクポイントで繰り返す
-	// パスごとにbefore/afterのスクショを撮って比較する
-	// 違いがあれば出力する
 
-	//
+	for _, tt := range cases {
+		beforelen := countFiles("./results")
+		compareFiles(tt.before, tt.after, tt.path, tt.breakpoint)
+		afterlen := countFiles(("./results"))
+
+		if tt.diff {
+			if beforelen == afterlen {
+				t.Error(beforelen, afterlen)
+			}
+		} else {
+			if beforelen != afterlen {
+				t.Error(beforelen, afterlen)
+			}
+		}
+	}
+}
+
+func countFiles(dirpath string) int {
+	files, _ := ioutil.ReadDir(dirpath)
+	var filesInfos []fs.FileInfo
+	for _, fi := range files {
+		filesInfos = append(filesInfos, fi)
+	}
+	return len(filesInfos)
+}
+
+func Test_setupArgs(t *testing.T) {
+	flag.CommandLine.Set("base_url", "http://localhost")
+	flag.CommandLine.Set("paths", "hoge,fuga")
+	flag.CommandLine.Set("breakpoints", "100,200,300")
+	flag.CommandLine.Set("gitpath", "./projecta")
+	flag.CommandLine.Set("beforebranch", "develop")
+	flag.CommandLine.Set("afterbranch", "feature_a")
+	flag.CommandLine.Set("beforeurl", "http://example.com")
+	flag.CommandLine.Set("afterurl", "http://localhost")
+	baseurl, paths, breakpoints, gitpath, beforebranch, afterbranch, beforeurl, afterurl := setupArgs()
+	if baseurl != "http://localhost" {
+		t.Error("expected http://localhost, but got", baseurl)
+	}
+	if !reflect.DeepEqual([]string{"hoge", "fuga"}, paths) {
+		t.Error("expexted, but got", paths)
+	}
+	if !reflect.DeepEqual([]int{100, 200, 300}, breakpoints) {
+		t.Error("expexted, but got", paths)
+	}
+	if gitpath != "./projecta" {
+		t.Error("error")
+	}
+	if beforebranch != "develop" {
+		t.Error("error")
+	}
+	if afterbranch != "feature_a" {
+		t.Error("error")
+	}
+	if beforeurl != "http://example.com" {
+		t.Error("error")
+	}
+	if afterurl != "http://localhost" {
+		t.Error("error")
+	}
+}
+
+func Test_setupBrowser(t *testing.T) {
+	p, d := setupBrowser()
+	p_want := "*agouti.Page"
+	p_got := reflect.TypeOf(p).String()
+	d_want := "*agouti.WebDriver"
+	d_got := reflect.TypeOf(d).String()
+
+	if p_want != p_got {
+		t.Error("error", p_got)
+	}
+	if d_want != d_got {
+		t.Error("error", d_got)
+	}
 }
