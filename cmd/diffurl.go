@@ -112,11 +112,20 @@ func validateArgs(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !strings.HasSuffix(b, "/") {
-		return errors.New("beforeurl must have '/' suffix")
+	err = validateUrl(b, "beforeurl")
+	if err != nil {
+		return err
 	}
-	if !strings.HasSuffix(a, "/") {
-		return errors.New("afterurl must have '/' suffix")
+	err = validateUrl(a, "afterurl")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateUrl(url, flag string) error {
+	if !strings.HasSuffix(url, "/") {
+		return errors.New(flag + " must end with '/'")
 	}
 	return nil
 }

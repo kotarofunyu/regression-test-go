@@ -17,6 +17,18 @@ var diffbranchCmd = &cobra.Command{
 	Short: "Comparison two websites based on git branches",
 	Long: `You can easily compare two git branches by providing arguments.
 It requires close attention that two websites must be almost same such as production env and development env. `,
+	Args: func(cmd *cobra.Command, args []string) error {
+		u, err := cmd.Flags().GetString("url")
+		fmt.Println(u)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = validateUrl(u, "url")
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("diffbranch called")
 		gitdir, err := cmd.Flags().GetString("gitdir")
