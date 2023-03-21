@@ -5,15 +5,14 @@ package cmd
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"image/png"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/kotarofunyu/regression-test-go/cmd/validator"
 	"github.com/kotarofunyu/regression-test-go/urlcomparison"
 	diff "github.com/olegfedoseev/image-diff"
 	"github.com/sclevine/agouti"
@@ -26,10 +25,26 @@ var diffurlCmd = &cobra.Command{
 	Short: "Comparison two websites based on urls",
 	Long: `You can easily compare two websites by providing arguments.
 It requires close attention that two websites must be almost same such as production env and development env. `,
-	Args: validateArgs,
+	Args: func(cmd *cobra.Command, args []string) error {
+		b, err := cmd.Flags().GetString("beforeurl")
+		if err != nil {
+			log.Fatal(err)
+		}
+		a, err := cmd.Flags().GetString("afterurl")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = validator.ValidateUrl(b, "beforeurl")
+		if err != nil {
+			return err
+		}
+		err = validator.ValidateUrl(a, "afterurl")
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		return
-		fmt.Println("diffurl called")
 		p, d := setupBrowser()
 		defer d.Stop()
 		beforeurl, err := cmd.Flags().GetString("beforeurl")
@@ -101,31 +116,4 @@ func compareFiles(before, after, path string, breakpoint int) {
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
 	fmt.Println("diff has written into " + destDir + diffName)
-}
-
-func validateArgs(cmd *cobra.Command, args []string) error {
-	b, err := cmd.Flags().GetString("beforeurl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	a, err := cmd.Flags().GetString("afterurl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = validateUrl(b, "beforeurl")
-	if err != nil {
-		return err
-	}
-	err = validateUrl(a, "afterurl")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func validateUrl(url, flag string) error {
-	if !strings.HasSuffix(url, "/") {
-		return errors.New(flag + " must end with '/'")
-	}
-	return nil
 }

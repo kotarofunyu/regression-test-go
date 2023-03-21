@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/kotarofunyu/regression-test-go/cmd/validator"
 	"github.com/kotarofunyu/regression-test-go/gitcomparison"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ It requires close attention that two websites must be almost same such as produc
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = validateUrl(u, "url")
+		err = validator.ValidateUrl(u, "url")
 		if err != nil {
 			return err
 		}
