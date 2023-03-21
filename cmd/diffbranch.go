@@ -63,14 +63,10 @@ func init() {
 	diffbranchCmd.Flags().StringP("url", "u", "", "url")
 	diffbranchCmd.Flags().StringSliceP("paths", "p", []string{}, "paths")
 	diffbranchCmd.Flags().IntSliceP("breakpoints", "w", []int{}, "breakpoints")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// diffbranchCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// diffbranchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	diffbranchCmd.MarkFlagRequired("gitdir")
+	diffbranchCmd.MarkFlagRequired("beforebranch")
+	diffbranchCmd.MarkFlagRequired("afterbranch")
+	diffbranchCmd.MarkFlagRequired("url")
+	diffbranchCmd.MarkFlagRequired("paths")
+	diffbranchCmd.MarkFlagRequired("breakpoints")
 }

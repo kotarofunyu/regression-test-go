@@ -59,6 +59,10 @@ func init() {
 	diffurlCmd.Flags().StringP("afterurl", "a", "", "after url")
 	diffurlCmd.Flags().StringSliceP("paths", "p", []string{}, "path")
 	diffurlCmd.Flags().IntSliceP("breakpoints", "w", []int{}, "breakpoints")
+	diffurlCmd.MarkFlagRequired("beforeurl")
+	diffurlCmd.MarkFlagRequired("afterurl")
+	diffurlCmd.MarkFlagRequired("paths")
+	diffurlCmd.MarkFlagRequired("breakpoints")
 }
 
 func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
