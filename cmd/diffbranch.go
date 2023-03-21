@@ -1,0 +1,76 @@
+/*
+Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+*/
+package cmd
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/kotarofunyu/regression-test-go/gitcomparison"
+	"github.com/spf13/cobra"
+)
+
+// diffbranchCmd represents the diffbranch command
+var diffbranchCmd = &cobra.Command{
+	Use:   "diffbranch",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("diffbranch called")
+		gitdir, err := cmd.Flags().GetString("gitdir")
+		if err != nil {
+			log.Fatal(err)
+		}
+		beforebranch, err := cmd.Flags().GetString("beforebranch")
+		if err != nil {
+			log.Fatal(err)
+		}
+		afterbranch, err := cmd.Flags().GetString("afterbranch")
+		if err != nil {
+			log.Fatal(err)
+		}
+		url, err := cmd.Flags().GetString("url")
+		if err != nil {
+			log.Fatal(err)
+		}
+		paths, err := cmd.Flags().GetStringSlice("paths")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(paths)
+		breakpoints, err := cmd.Flags().GetIntSlice("breakpoints")
+		if err != nil {
+			log.Fatal(err)
+		}
+		p, d := setupBrowser()
+		defer d.Stop()
+		gc := gitcomparison.NewGitComparison(gitdir, beforebranch, afterbranch, url, paths, breakpoints, p)
+		gc.Run(compareFiles)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(diffbranchCmd)
+	diffbranchCmd.Flags().StringP("gitdir", "d", "", "directory that git repository is placed")
+	diffbranchCmd.Flags().StringP("beforebranch", "b", "", "before branch")
+	diffbranchCmd.Flags().StringP("afterbranch", "a", "", "after branch")
+	diffbranchCmd.Flags().StringP("url", "u", "", "url")
+	diffbranchCmd.Flags().StringSliceP("paths", "p", []string{}, "paths")
+	diffbranchCmd.Flags().IntSliceP("breakpoints", "w", []int{}, "breakpoints")
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// diffbranchCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// diffbranchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
