@@ -5,11 +5,13 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image/png"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kotarofunyu/regression-test-go/urlcomparison"
@@ -24,7 +26,9 @@ var diffurlCmd = &cobra.Command{
 	Short: "Comparison two websites based on urls",
 	Long: `You can easily compare two websites by providing arguments.
 It requires close attention that two websites must be almost same such as production env and development env. `,
+	Args: validateArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		return
 		fmt.Println("diffurl called")
 		p, d := setupBrowser()
 		defer d.Stop()
@@ -97,4 +101,22 @@ func compareFiles(before, after, path string, breakpoint int) {
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
 	fmt.Println("diff has written into " + destDir + diffName)
+}
+
+func validateArgs(cmd *cobra.Command, args []string) error {
+	b, err := cmd.Flags().GetString("beforeurl")
+	if err != nil {
+		log.Fatal(err)
+	}
+	a, err := cmd.Flags().GetString("afterurl")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !strings.HasSuffix(b, "/") {
+		return errors.New("beforeurl must have '/' suffix")
+	}
+	if !strings.HasSuffix(a, "/") {
+		return errors.New("afterurl must have '/' suffix")
+	}
+	return nil
 }
