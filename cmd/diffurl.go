@@ -21,13 +21,9 @@ import (
 // diffurlCmd represents the diffurl command
 var diffurlCmd = &cobra.Command{
 	Use:   "diffurl",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Comparison two websites based on urls",
+	Long: `You can easily compare two websites by providing arguments.
+It requires close attention that two websites must be almost same such as production env and development env. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("diffurl called")
 		p, d := setupBrowser()
