@@ -52,11 +52,11 @@ func SaveCapture(filename string, p *agouti.Page) (*os.File, error) {
 
 func CreateOutputDir(resultDir, capturesDir string) error {
 	err := os.Mkdir(resultDir, os.ModePerm)
-	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", resultDir) {
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
 	err = os.Mkdir(capturesDir, os.ModePerm)
-	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", capturesDir) {
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
 	return nil
