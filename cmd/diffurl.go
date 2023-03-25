@@ -4,18 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"bytes"
-	"fmt"
-	"image/png"
 	"log"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/kotarofunyu/regression-test-go/cmd/validator"
 	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/kotarofunyu/regression-test-go/urlcomparison"
-	diff "github.com/olegfedoseev/image-diff"
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +57,7 @@ It requires close attention that two websites must be almost same such as produc
 			log.Fatal(err)
 		}
 		u := urlcomparison.NewUrlComparison(beforeurl, afterurl, paths, breakpoints, p)
-		u.Run(compareFiles)
+		u.Run(comparison.CompareFiles)
 	},
 }
 
@@ -78,27 +71,4 @@ func init() {
 	diffurlCmd.MarkFlagRequired("afterurl")
 	diffurlCmd.MarkFlagRequired("paths")
 	diffurlCmd.MarkFlagRequired("breakpoints")
-}
-
-func compareFiles(before, after, path string, breakpoint int) {
-	diff, percent, err := diff.CompareFiles(before, after)
-	if err != nil {
-		log.Fatal(err, before, after)
-	}
-	if percent == 0.0 {
-		fmt.Println("Image is same!")
-		return
-	}
-	t := time.Now()
-	ft := t.Format("20200101123045")
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
-	destDir := "./results/"
-	f, err := os.Create(destDir + diffName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	buf := new(bytes.Buffer)
-	png.Encode(buf, diff)
-	f.Write(buf.Bytes())
-	fmt.Println("diff has written into " + destDir + diffName)
 }

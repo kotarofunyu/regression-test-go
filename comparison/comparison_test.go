@@ -1,6 +1,8 @@
 package comparison
 
 import (
+	"io/fs"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -109,4 +111,56 @@ func TestCreateOutputDir(t *testing.T) {
 			t.Errorf("error running test %s", test.description)
 		}
 	}
+}
+
+func TestCompareFiles(t *testing.T) {
+	cases := []struct {
+		before     string
+		after      string
+		path       string
+		breakpoint int
+		diff       bool
+	}{
+		{
+			before:     "../testdata/sample.png",
+			after:      "../testdata/sample_copy.png",
+			path:       "sample",
+			breakpoint: 768,
+			diff:       false,
+		},
+		{
+			before:     "../testdata/sample.png",
+			after:      "../testdata/sample_diff.png",
+			path:       "sample",
+			breakpoint: 768,
+			diff:       true,
+		},
+	}
+
+	defer func() {
+		os.RemoveAll("./results")
+	}()
+
+	for _, tt := range cases {
+		beforelen := countFiles("./results")
+		CompareFiles(tt.before, tt.after, tt.path, tt.breakpoint)
+		afterlen := countFiles(("./results"))
+
+		if tt.diff {
+			if beforelen == afterlen {
+				t.Error(beforelen, afterlen)
+			}
+		} else {
+			if beforelen != afterlen {
+				t.Error(beforelen, afterlen)
+			}
+		}
+	}
+}
+
+func countFiles(dirpath string) int {
+	files, _ := ioutil.ReadDir(dirpath)
+	var filesInfos []fs.FileInfo
+	filesInfos = append(filesInfos, files...)
+	return len(filesInfos)
 }
