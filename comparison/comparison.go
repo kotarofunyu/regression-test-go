@@ -1,6 +1,7 @@
 package comparison
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/sclevine/agouti"
@@ -24,4 +25,8 @@ func SetupBrowser() (*agouti.Page, *agouti.WebDriver) {
 	page, _ := driver.NewPage()
 
 	return page, driver
+}
+
+func NewFileName(timing, path string, breakpoint int) string {
+	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
 }

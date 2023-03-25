@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
 )
 
@@ -67,7 +68,7 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				beforefilename := newFileName("before", path, breakpoint)
+				beforefilename := comparison.NewFileName("before", path, breakpoint)
 				bf, err := saveCapture(beforefilename, gc)
 				if err != nil {
 					log.Fatal(err)
@@ -76,7 +77,7 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				afterfilename := newFileName("after", path, breakpoint)
+				afterfilename := comparison.NewFileName("after", path, breakpoint)
 				af, err := saveCapture(afterfilename, gc)
 				if err != nil {
 					log.Fatal(err)
@@ -139,8 +140,4 @@ func saveCapture(filename string, gc *GitComparison) (*os.File, error) {
 		return nil, err
 	}
 	return f, nil
-}
-
-func newFileName(timing, path string, breakpoint int) string {
-	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
 }

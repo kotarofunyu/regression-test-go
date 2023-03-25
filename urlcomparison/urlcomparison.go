@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
 )
 
@@ -40,14 +41,14 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			if err := setPageSize(uc, breakpoint, height); err != nil {
 				log.Fatal(err)
 			}
-			beforefilename := newFileName("before", path, breakpoint)
+			beforefilename := comparison.NewFileName("before", path, breakpoint)
 			bf, err := saveCapture(beforefilename, uc)
 			if err != nil {
 				log.Fatal(err)
 			}
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
-			afterfilename := newFileName("after", path, breakpoint)
+			afterfilename := comparison.NewFileName("after", path, breakpoint)
 			af, err := saveCapture(afterfilename, uc)
 			if err != nil {
 				log.Fatal(err)
@@ -94,8 +95,4 @@ func saveCapture(filename string, uc *UrlComparison) (*os.File, error) {
 		return nil, err
 	}
 	return f, nil
-}
-
-func newFileName(timing, path string, breakpoint int) string {
-	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
 }
