@@ -32,11 +32,11 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
 			uc.page.Navigate(uc.beforebaseurl + path)
-			height, err := getPageHeight(uc)
+			height, err := comparison.GetPageHeight(uc.page)
 			if err != nil {
 				log.Fatal(err)
 			}
-			if err := setPageSize(uc, breakpoint, height); err != nil {
+			if err := comparison.SetPageSize(uc.page, breakpoint, height); err != nil {
 				log.Fatal(err)
 			}
 			beforefilename := comparison.NewFileName("before", path, breakpoint)
@@ -54,19 +54,4 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			comparefunc(bf.Name(), af.Name(), path, breakpoint)
 		}
 	}
-}
-
-func getPageHeight(uc *UrlComparison) (int, error) {
-	var height int
-	if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
-		return 0, err
-	}
-	return height, nil
-}
-
-func setPageSize(uc *UrlComparison, breakpoint, height int) error {
-	if err := uc.page.Size(breakpoint, height); err != nil {
-		return err
-	}
-	return nil
 }

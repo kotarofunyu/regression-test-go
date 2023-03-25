@@ -55,3 +55,18 @@ func CreateOutputDir(resultDir, capturesDir string) error {
 	}
 	return nil
 }
+
+func GetPageHeight(p *agouti.Page) (int, error) {
+	var height int
+	if err := p.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+		return 0, err
+	}
+	return height, nil
+}
+
+func SetPageSize(p *agouti.Page, breakpoint, height int) error {
+	if err := p.Size(breakpoint, height); err != nil {
+		return err
+	}
+	return nil
+}
