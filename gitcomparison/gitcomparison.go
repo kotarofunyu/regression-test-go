@@ -54,10 +54,6 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 			defer mu.Unlock()
 			gc.page.Navigate(gc.baseurl + path)
 			for _, breakpoint := range gc.breakpoints {
-				before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-				after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-				os.Create(before)
-				os.Create(after)
 				var height int
 				if err := gc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 					log.Fatal(err)
@@ -67,12 +63,18 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				gc.page.Screenshot(before)
+				before, err := saveCapture("before", path, breakpoint, gc)
+				if err != nil {
+					log.Fatal(err)
+				}
 				if err := checkoutGitBranch(gc.repository, gc.afterbranch); err != nil {
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				gc.page.Screenshot(after)
+				after, err := saveCapture("after", path, breakpoint, gc)
+				if err != nil {
+					log.Fatal(err)
+				}
 				comparefunc(before, after, path, breakpoint)
 			}
 		}(&wg, path)
@@ -104,4 +106,17 @@ func createOutputDir() error {
 		return err
 	}
 	return nil
+}
+
+func saveCapture(timing, path string, breakpoint int, gc *GitComparison) (string, error) {
+	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	_, err := os.Create(dest)
+	if err != nil {
+		return "", err
+	}
+	err = gc.page.Screenshot(dest)
+	if err != nil {
+		return "", err
+	}
+	return dest, nil
 }

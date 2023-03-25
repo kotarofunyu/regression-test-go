@@ -30,20 +30,22 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 	createOutputDir()
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
-			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			os.Create(before)
-			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-			os.Create(after)
 			uc.page.Navigate(uc.beforebaseurl + path)
 			var height int
 			if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 				log.Fatal(err)
 			}
 			uc.page.Size(breakpoint, height)
-			uc.page.Screenshot(before)
+			before, err := saveCapture("before", path, breakpoint, uc)
+			if err != nil {
+				log.Fatal(err)
+			}
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
-			uc.page.Screenshot(after)
+			after, err := saveCapture("after", path, breakpoint, uc)
+			if err != nil {
+				log.Fatal(err)
+			}
 			comparefunc(before, after, path, breakpoint)
 		}
 	}
@@ -59,4 +61,17 @@ func createOutputDir() error {
 		return err
 	}
 	return nil
+}
+
+func saveCapture(timing, path string, breakpoint int, uc *UrlComparison) (string, error) {
+	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+	_, err := os.Create(dest)
+	if err != nil {
+		return "", nil
+	}
+	err = uc.page.Screenshot(dest)
+	if err != nil {
+		return "", nil
+	}
+	return dest, nil
 }
