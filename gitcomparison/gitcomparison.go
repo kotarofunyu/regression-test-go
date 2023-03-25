@@ -54,11 +54,13 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 			defer mu.Unlock()
 			gc.page.Navigate(gc.baseurl + path)
 			for _, breakpoint := range gc.breakpoints {
-				var height int
-				if err := gc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+				height, err := getPageHeight(gc)
+				if err != nil {
 					log.Fatal(err)
 				}
-				gc.page.Size(breakpoint, height)
+				if err := setPageSize(gc, breakpoint, height); err != nil {
+					log.Fatal(err)
+				}
 				if err := checkoutGitBranch(gc.repository, gc.beforebranch); err != nil {
 					log.Fatal(err)
 				}
@@ -82,6 +84,21 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 	wg.Wait()
 	// NOTE: ファイルへの書き込みをやめてバイナリをメモリに保持して比較する方が省エネかも
 	// defer rt.cleanupCaptures(before, after)
+}
+
+func getPageHeight(gc *GitComparison) (int, error) {
+	var height int
+	if err := gc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+		return 0, err
+	}
+	return height, nil
+}
+
+func setPageSize(gc *GitComparison, breakpoint, height int) error {
+	if err := gc.page.Size(breakpoint, height); err != nil {
+		return err
+	}
+	return nil
 }
 
 func checkoutGitBranch(wt *git.Worktree, destbranch string) error {

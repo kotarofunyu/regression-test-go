@@ -31,11 +31,13 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
 			uc.page.Navigate(uc.beforebaseurl + path)
-			var height int
-			if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+			height, err := getPageHeight(uc)
+			if err != nil {
 				log.Fatal(err)
 			}
-			uc.page.Size(breakpoint, height)
+			if err := setPageSize(uc, breakpoint, height); err != nil {
+				log.Fatal(err)
+			}
 			before, err := saveCapture("before", path, breakpoint, uc)
 			if err != nil {
 				log.Fatal(err)
@@ -49,6 +51,21 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			comparefunc(before, after, path, breakpoint)
 		}
 	}
+}
+
+func getPageHeight(uc *UrlComparison) (int, error) {
+	var height int
+	if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
+		return 0, err
+	}
+	return height, nil
+}
+
+func setPageSize(uc *UrlComparison, breakpoint, height int) error {
+	if err := uc.page.Size(breakpoint, height); err != nil {
+		return err
+	}
+	return nil
 }
 
 func createOutputDir() error {
