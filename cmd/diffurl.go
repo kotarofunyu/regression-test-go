@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/kotarofunyu/regression-test-go/cmd/validator"
+	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/kotarofunyu/regression-test-go/urlcomparison"
 	diff "github.com/olegfedoseev/image-diff"
-	"github.com/sclevine/agouti"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +45,7 @@ It requires close attention that two websites must be almost same such as produc
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		p, d := setupBrowser()
+		p, d := comparison.SetupBrowser()
 		defer d.Stop()
 		beforeurl, err := cmd.Flags().GetString("beforeurl")
 		if err != nil {
@@ -78,21 +78,6 @@ func init() {
 	diffurlCmd.MarkFlagRequired("afterurl")
 	diffurlCmd.MarkFlagRequired("paths")
 	diffurlCmd.MarkFlagRequired("breakpoints")
-}
-
-func setupBrowser() (*agouti.Page, *agouti.WebDriver) {
-	driver := agouti.ChromeDriver(
-		agouti.ChromeOptions("args", []string{
-			"--headless",
-		}),
-	)
-	err := driver.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-	page, _ := driver.NewPage()
-
-	return page, driver
 }
 
 func compareFiles(before, after, path string, breakpoint int) {
