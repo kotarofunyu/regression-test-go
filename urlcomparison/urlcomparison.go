@@ -42,14 +42,14 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 				log.Fatal(err)
 			}
 			beforefilename := comparison.NewFileName("before", path, breakpoint)
-			bf, err := saveCapture(beforefilename, uc)
+			bf, err := comparison.SaveCapture(beforefilename, uc.page)
 			if err != nil {
 				log.Fatal(err)
 			}
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
 			afterfilename := comparison.NewFileName("after", path, breakpoint)
-			af, err := saveCapture(afterfilename, uc)
+			af, err := comparison.SaveCapture(afterfilename, uc.page)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -83,16 +83,4 @@ func createOutputDir(resultDir, capturesDir string) error {
 		return err
 	}
 	return nil
-}
-
-func saveCapture(filename string, uc *UrlComparison) (*os.File, error) {
-	f, err := os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-	err = uc.page.Screenshot(filename)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
 }

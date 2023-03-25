@@ -3,6 +3,7 @@ package comparison
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/sclevine/agouti"
 )
@@ -29,4 +30,16 @@ func SetupBrowser() (*agouti.Page, *agouti.WebDriver) {
 
 func NewFileName(timing, path string, breakpoint int) string {
 	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
+}
+
+func SaveCapture(filename string, p *agouti.Page) (*os.File, error) {
+	f, err := os.Create(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = p.Screenshot(filename)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }

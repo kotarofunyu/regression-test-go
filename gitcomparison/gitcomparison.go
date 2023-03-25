@@ -69,7 +69,7 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 				}
 				gc.page.Refresh()
 				beforefilename := comparison.NewFileName("before", path, breakpoint)
-				bf, err := saveCapture(beforefilename, gc)
+				bf, err := comparison.SaveCapture(beforefilename, gc.page)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -78,7 +78,7 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 				}
 				gc.page.Refresh()
 				afterfilename := comparison.NewFileName("after", path, breakpoint)
-				af, err := saveCapture(afterfilename, gc)
+				af, err := comparison.SaveCapture(afterfilename, gc.page)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -128,16 +128,4 @@ func createOutputDir(resultDir, capturesDir string) error {
 		return err
 	}
 	return nil
-}
-
-func saveCapture(filename string, gc *GitComparison) (*os.File, error) {
-	f, err := os.Create(filename)
-	if err != nil {
-		return nil, err
-	}
-	err = gc.page.Screenshot(filename)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
 }
