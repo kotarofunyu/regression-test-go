@@ -1,9 +1,7 @@
 package urlcomparison
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
@@ -28,7 +26,7 @@ func NewUrlComparison(beforebaseurl, afterbaseurl string, paths []string, breakp
 }
 
 func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
-	if err := createOutputDir("results/", "captures/"); err != nil {
+	if err := comparison.CreateOutputDir("results/", "captures/"); err != nil {
 		log.Fatal(err)
 	}
 	for _, path := range uc.paths {
@@ -68,18 +66,6 @@ func getPageHeight(uc *UrlComparison) (int, error) {
 
 func setPageSize(uc *UrlComparison, breakpoint, height int) error {
 	if err := uc.page.Size(breakpoint, height); err != nil {
-		return err
-	}
-	return nil
-}
-
-func createOutputDir(resultDir, capturesDir string) error {
-	err := os.Mkdir(resultDir, os.ModePerm)
-	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", resultDir) {
-		return err
-	}
-	err = os.Mkdir(capturesDir, os.ModePerm)
-	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", capturesDir) {
 		return err
 	}
 	return nil
