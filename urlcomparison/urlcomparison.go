@@ -27,7 +27,9 @@ func NewUrlComparison(beforebaseurl, afterbaseurl string, paths []string, breakp
 }
 
 func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
-	createOutputDir()
+	if err := createOutputDir("results/", "captures/"); err != nil {
+		log.Fatal(err)
+	}
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
 			uc.page.Navigate(uc.beforebaseurl + path)
@@ -70,13 +72,13 @@ func setPageSize(uc *UrlComparison, breakpoint, height int) error {
 	return nil
 }
 
-func createOutputDir() error {
-	err := os.Mkdir("results/", os.ModePerm)
-	if err != nil {
+func createOutputDir(resultDir, capturesDir string) error {
+	err := os.Mkdir(resultDir, os.ModePerm)
+	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", resultDir) {
 		return err
 	}
-	err = os.Mkdir("captures/", os.ModePerm)
-	if err != nil {
+	err = os.Mkdir(capturesDir, os.ModePerm)
+	if err != nil && err.Error() != fmt.Sprintf("mkdir %s: file exists", capturesDir) {
 		return err
 	}
 	return nil
