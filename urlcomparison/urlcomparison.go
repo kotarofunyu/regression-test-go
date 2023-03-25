@@ -38,17 +38,17 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			if err := setPageSize(uc, breakpoint, height); err != nil {
 				log.Fatal(err)
 			}
-			before, err := saveCapture("before", path, breakpoint, uc)
+			bf, err := saveCapture("before", path, breakpoint, uc)
 			if err != nil {
 				log.Fatal(err)
 			}
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
-			after, err := saveCapture("after", path, breakpoint, uc)
+			af, err := saveCapture("after", path, breakpoint, uc)
 			if err != nil {
 				log.Fatal(err)
 			}
-			comparefunc(before, after, path, breakpoint)
+			comparefunc(bf.Name(), af.Name(), path, breakpoint)
 		}
 	}
 }
@@ -80,15 +80,15 @@ func createOutputDir() error {
 	return nil
 }
 
-func saveCapture(timing, path string, breakpoint int, uc *UrlComparison) (string, error) {
+func saveCapture(timing, path string, breakpoint int, uc *UrlComparison) (*os.File, error) {
 	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	_, err := os.Create(dest)
+	f, err := os.Create(dest)
 	if err != nil {
-		return "", nil
+		return nil, err
 	}
 	err = uc.page.Screenshot(dest)
 	if err != nil {
-		return "", nil
+		return nil, err
 	}
-	return dest, nil
+	return f, nil
 }

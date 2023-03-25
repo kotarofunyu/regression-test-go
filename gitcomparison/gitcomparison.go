@@ -65,7 +65,7 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				before, err := saveCapture("before", path, breakpoint, gc)
+				bf, err := saveCapture("before", path, breakpoint, gc)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -73,11 +73,11 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				after, err := saveCapture("after", path, breakpoint, gc)
+				af, err := saveCapture("after", path, breakpoint, gc)
 				if err != nil {
 					log.Fatal(err)
 				}
-				comparefunc(before, after, path, breakpoint)
+				comparefunc(bf.Name(), af.Name(), path, breakpoint)
 			}
 		}(&wg, path)
 	}
@@ -125,15 +125,15 @@ func createOutputDir() error {
 	return nil
 }
 
-func saveCapture(timing, path string, breakpoint int, gc *GitComparison) (string, error) {
+func saveCapture(timing, path string, breakpoint int, gc *GitComparison) (*os.File, error) {
 	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	_, err := os.Create(dest)
+	f, err := os.Create(dest)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	err = gc.page.Screenshot(dest)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return dest, nil
+	return f, nil
 }
