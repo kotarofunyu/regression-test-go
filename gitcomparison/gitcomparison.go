@@ -42,8 +42,7 @@ func NewGitComparison(gitpath, beforebranch, afterbranch, baseUrl string, paths 
 }
 
 func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
-	os.Mkdir("results/", os.ModePerm)
-	os.Mkdir("captures/", os.ModePerm)
+	createOutputDir()
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	for _, path := range gc.paths {
@@ -89,6 +88,18 @@ func checkoutGitBranch(wt *git.Worktree, destbranch string) error {
 			Branch: plumbing.NewBranchReferenceName(destbranch),
 		},
 	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func createOutputDir() error {
+	err := os.Mkdir("results/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir("captures/", os.ModePerm)
 	if err != nil {
 		return err
 	}

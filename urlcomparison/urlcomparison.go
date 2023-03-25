@@ -27,8 +27,7 @@ func NewUrlComparison(beforebaseurl, afterbaseurl string, paths []string, breakp
 }
 
 func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
-	os.Mkdir("results/", os.ModePerm)
-	os.Mkdir("captures/", os.ModePerm)
+	createOutputDir()
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
 			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
@@ -48,4 +47,16 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			comparefunc(before, after, path, breakpoint)
 		}
 	}
+}
+
+func createOutputDir() error {
+	err := os.Mkdir("results/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.Mkdir("captures/", os.ModePerm)
+	if err != nil {
+		return err
+	}
+	return nil
 }
