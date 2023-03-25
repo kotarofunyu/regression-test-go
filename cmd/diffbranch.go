@@ -61,7 +61,7 @@ It requires close attention that two websites must be almost same such as produc
 		p, d := comparison.SetupBrowser()
 		defer d.Stop()
 		gc := gitcomparison.NewGitComparison(gitdir, beforebranch, afterbranch, url, paths, breakpoints, p)
-		gc.Run(comparison.CompareFiles)
+		gc.Run()
 	},
 }
 

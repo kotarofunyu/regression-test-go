@@ -25,7 +25,7 @@ func NewUrlComparison(beforebaseurl, afterbaseurl string, paths []string, breakp
 	}
 }
 
-func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
+func (uc *UrlComparison) Run() {
 	if err := comparison.CreateOutputDir("results/", "captures/"); err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			if err != nil {
 				log.Fatal(err)
 			}
-			comparefunc(bf.Name(), af.Name(), path, breakpoint)
+			comparison.CompareFiles(bf.Name(), af.Name(), path, breakpoint)
 		}
 	}
 }

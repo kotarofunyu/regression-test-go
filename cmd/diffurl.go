@@ -57,7 +57,7 @@ It requires close attention that two websites must be almost same such as produc
 			log.Fatal(err)
 		}
 		u := urlcomparison.NewUrlComparison(beforeurl, afterurl, paths, breakpoints, p)
-		u.Run(comparison.CompareFiles)
+		u.Run()
 	},
 }
 
