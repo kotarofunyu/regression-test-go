@@ -1,9 +1,9 @@
 package urlcomparison
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/sclevine/agouti"
 )
@@ -38,13 +38,15 @@ func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakp
 			if err := setPageSize(uc, breakpoint, height); err != nil {
 				log.Fatal(err)
 			}
-			bf, err := saveCapture("before", path, breakpoint, uc)
+			beforefilename := newFileName("before", path, breakpoint)
+			bf, err := saveCapture(beforefilename, uc)
 			if err != nil {
 				log.Fatal(err)
 			}
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
-			af, err := saveCapture("after", path, breakpoint, uc)
+			afterfilename := newFileName("after", path, breakpoint)
+			af, err := saveCapture(afterfilename, uc)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -80,15 +82,18 @@ func createOutputDir() error {
 	return nil
 }
 
-func saveCapture(timing, path string, breakpoint int, uc *UrlComparison) (*os.File, error) {
-	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	f, err := os.Create(dest)
+func saveCapture(filename string, uc *UrlComparison) (*os.File, error) {
+	f, err := os.Create(filename)
 	if err != nil {
 		return nil, err
 	}
-	err = uc.page.Screenshot(dest)
+	err = uc.page.Screenshot(filename)
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
+}
+
+func newFileName(timing, path string, breakpoint int) string {
+	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
 }

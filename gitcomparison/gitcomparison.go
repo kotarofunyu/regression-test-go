@@ -1,9 +1,9 @@
 package gitcomparison
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/go-git/go-git/v5"
@@ -65,7 +65,8 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				bf, err := saveCapture("before", path, breakpoint, gc)
+				beforefilename := newFileName("before", path, breakpoint)
+				bf, err := saveCapture(beforefilename, gc)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -73,7 +74,8 @@ func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakp
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				af, err := saveCapture("after", path, breakpoint, gc)
+				afterfilename := newFileName("after", path, breakpoint)
+				af, err := saveCapture(afterfilename, gc)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -125,15 +127,18 @@ func createOutputDir() error {
 	return nil
 }
 
-func saveCapture(timing, path string, breakpoint int, gc *GitComparison) (*os.File, error) {
-	dest := "./captures/" + timing + "-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
-	f, err := os.Create(dest)
+func saveCapture(filename string, gc *GitComparison) (*os.File, error) {
+	f, err := os.Create(filename)
 	if err != nil {
 		return nil, err
 	}
-	err = gc.page.Screenshot(dest)
+	err = gc.page.Screenshot(filename)
 	if err != nil {
 		return nil, err
 	}
 	return f, nil
+}
+
+func newFileName(timing, path string, breakpoint int) string {
+	return fmt.Sprintf("./captures/%s-%s-%d.png", timing, path, breakpoint)
 }
