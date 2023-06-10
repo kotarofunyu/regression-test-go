@@ -2,8 +2,9 @@ package urlcomparison
 
 import (
 	"log"
+	"os"
+	"strconv"
 
-	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
 )
 
@@ -25,33 +26,26 @@ func NewUrlComparison(beforebaseurl, afterbaseurl string, paths []string, breakp
 	}
 }
 
-func (uc *UrlComparison) Run() {
-	if err := comparison.CreateOutputDir("results/", "captures/"); err != nil {
-		log.Fatal(err)
-	}
+func (uc *UrlComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
+	os.Mkdir("results/", os.ModePerm)
+	os.Mkdir("captures/", os.ModePerm)
 	for _, path := range uc.paths {
 		for _, breakpoint := range uc.breakpoints {
+			before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(before)
+			after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+			os.Create(after)
 			uc.page.Navigate(uc.beforebaseurl + path)
-			height, err := comparison.GetPageHeight(uc.page)
-			if err != nil {
+			var height int
+			if err := uc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 				log.Fatal(err)
 			}
-			if err := comparison.SetPageSize(uc.page, breakpoint, height); err != nil {
-				log.Fatal(err)
-			}
-			beforefilename := comparison.NewFileName("before", path, breakpoint)
-			bf, err := comparison.SaveCapture(beforefilename, uc.page)
-			if err != nil {
-				log.Fatal(err)
-			}
+			uc.page.Size(breakpoint, height)
+			uc.page.Screenshot(before)
 			uc.page.Navigate(uc.afterbaseurl + path)
 			uc.page.Size(breakpoint, height)
-			afterfilename := comparison.NewFileName("after", path, breakpoint)
-			af, err := comparison.SaveCapture(afterfilename, uc.page)
-			if err != nil {
-				log.Fatal(err)
-			}
-			comparison.CompareFiles(bf.Name(), af.Name(), path, breakpoint)
+			uc.page.Screenshot(after)
+			comparefunc(before, after, path, breakpoint)
 		}
 	}
 }

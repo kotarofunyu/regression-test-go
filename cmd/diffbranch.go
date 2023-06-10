@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/kotarofunyu/regression-test-go/cmd/validator"
-	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/kotarofunyu/regression-test-go/gitcomparison"
 	"github.com/spf13/cobra"
 )
@@ -58,10 +57,10 @@ It requires close attention that two websites must be almost same such as produc
 		if err != nil {
 			log.Fatal(err)
 		}
-		p, d := comparison.SetupBrowser()
+		p, d := setupBrowser()
 		defer d.Stop()
 		gc := gitcomparison.NewGitComparison(gitdir, beforebranch, afterbranch, url, paths, breakpoints, p)
-		gc.Run()
+		gc.Run(compareFiles)
 	},
 }
 

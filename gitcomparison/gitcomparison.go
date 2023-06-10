@@ -2,11 +2,12 @@ package gitcomparison
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"sync"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
 )
 
@@ -40,10 +41,9 @@ func NewGitComparison(gitpath, beforebranch, afterbranch, baseUrl string, paths 
 	}
 }
 
-func (gc *GitComparison) Run() {
-	if err := comparison.CreateOutputDir("results/", "captures/"); err != nil {
-		log.Fatal(err)
-	}
+func (gc *GitComparison) Run(comparefunc func(before, after, path string, breakpoint int)) {
+	os.Mkdir("results/", os.ModePerm)
+	os.Mkdir("captures/", os.ModePerm)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	for _, path := range gc.paths {
@@ -55,32 +55,26 @@ func (gc *GitComparison) Run() {
 			defer mu.Unlock()
 			gc.page.Navigate(gc.baseurl + path)
 			for _, breakpoint := range gc.breakpoints {
-				height, err := comparison.GetPageHeight(gc.page)
-				if err != nil {
+				before := "./captures/before-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+				after := "./captures/after-" + path + "-" + strconv.Itoa(breakpoint) + ".png"
+				os.Create(before)
+				os.Create(after)
+				var height int
+				if err := gc.page.RunScript("return document.body.scrollHeight;", nil, &height); err != nil {
 					log.Fatal(err)
 				}
-				if err := comparison.SetPageSize(gc.page, breakpoint, height); err != nil {
-					log.Fatal(err)
-				}
+				gc.page.Size(breakpoint, height)
 				if err := checkoutGitBranch(gc.repository, gc.beforebranch); err != nil {
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				beforefilename := comparison.NewFileName("before", path, breakpoint)
-				bf, err := comparison.SaveCapture(beforefilename, gc.page)
-				if err != nil {
-					log.Fatal(err)
-				}
+				gc.page.Screenshot(before)
 				if err := checkoutGitBranch(gc.repository, gc.afterbranch); err != nil {
 					log.Fatal(err)
 				}
 				gc.page.Refresh()
-				afterfilename := comparison.NewFileName("after", path, breakpoint)
-				af, err := comparison.SaveCapture(afterfilename, gc.page)
-				if err != nil {
-					log.Fatal(err)
-				}
-				comparison.CompareFiles(bf.Name(), af.Name(), path, breakpoint)
+				gc.page.Screenshot(after)
+				comparefunc(before, after, path, breakpoint)
 			}
 		}(&wg, path)
 	}
