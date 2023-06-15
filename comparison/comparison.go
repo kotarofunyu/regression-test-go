@@ -3,7 +3,6 @@ package comparison
 import (
 	"bytes"
 	"fmt"
-	"image"
 	"image/png"
 	"log"
 	"os"
@@ -104,42 +103,4 @@ func CompareFiles(before, after, path string, breakpoint int) {
 	png.Encode(buf, diff)
 	f.Write(buf.Bytes())
 	fmt.Println("diff has written into " + destDir + diffName)
-}
-
-// WIP refactor CompareFiles
-func newcomparefiles(before, after string) (*image.Image, error) {
-	d, p, err := diff.CompareFiles(before, after)
-	if err != nil {
-		return nil, err
-	}
-	if p == 0.0 {
-		fmt.Println("No Difference!")
-		return nil, nil
-	}
-	return &d, nil
-}
-
-func newDiffFileName(path string, breakpoint int) string {
-	t := time.Now()
-	ft := t.Format("20200101123045")
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
-	destDir := "./results/"
-	return destDir + diffName
-}
-
-func writeimagetofile(i image.Image, path string, breakpoint int) {
-	resultfilename := newDiffFileName(path, breakpoint)
-	var f *os.File
-	f, err := os.Create(resultfilename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			os.Mkdir("results", os.ModePerm)
-			f, _ = os.Create(resultfilename)
-		} else {
-			log.Fatal(err)
-		}
-	}
-	buf := new(bytes.Buffer)
-	png.Encode(buf, i)
-	f.Write(buf.Bytes())
 }
