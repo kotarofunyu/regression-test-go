@@ -2,6 +2,9 @@ package urlcomparison
 
 import (
 	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/kotarofunyu/regression-test-go/comparison"
 	"github.com/sclevine/agouti"
@@ -51,7 +54,21 @@ func (uc *UrlComparison) Run() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			comparison.CompareFiles(bf.Name(), af.Name(), path, breakpoint)
+			t := time.Now()
+			ft := t.Format("20200101123045")
+			diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
+			destDir := "./results/"
+			var f *os.File
+			f, err = os.Create(destDir + diffName)
+			if err != nil {
+				if os.IsNotExist(err) {
+					os.Mkdir("results", os.ModePerm)
+					f, _ = os.Create(destDir + diffName)
+				} else {
+					log.Fatal(err)
+				}
+			}
+			comparison.CompareFiles(f, bf.Name(), af.Name(), path, breakpoint)
 		}
 	}
 }
