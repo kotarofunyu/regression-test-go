@@ -1,13 +1,13 @@
 package validator
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 )
 
 func ValidateUrl(url, name string) error {
 	if !strings.HasSuffix(url, "/") {
-		return errors.New(name + " must end with '/'")
+		return fmt.Errorf("%s must end with '/'", name)
 	}
 	return nil
 }
