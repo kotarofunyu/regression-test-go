@@ -2,7 +2,10 @@ package gitcomparison
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -80,7 +83,21 @@ func (gc *GitComparison) Run() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				comparison.CompareFiles(bf.Name(), af.Name(), path, breakpoint)
+				t := time.Now()
+				ft := t.Format("20200101123045")
+				diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
+				destDir := "./results/"
+				var f *os.File
+				f, err = os.Create(destDir + diffName)
+				if err != nil {
+					if os.IsNotExist(err) {
+						os.Mkdir("results", os.ModePerm)
+						f, _ = os.Create(destDir + diffName)
+					} else {
+						log.Fatal(err)
+					}
+				}
+				comparison.CompareFiles(f, bf.Name(), af.Name(), path, breakpoint)
 			}
 		}(&wg, path)
 	}

@@ -3,12 +3,10 @@ package comparison
 import (
 	"bytes"
 	"fmt"
-	"image"
 	"image/png"
+	"io"
 	"log"
 	"os"
-	"strconv"
-	"time"
 
 	diff "github.com/olegfedoseev/image-diff"
 	"github.com/sclevine/agouti"
@@ -77,7 +75,7 @@ func SetPageSize(p *agouti.Page, breakpoint, height int) error {
 	return nil
 }
 
-func CompareFiles(before, after, path string, breakpoint int) {
+func CompareFiles(w io.Writer, before, after, path string, breakpoint int) {
 	diff, percent, err := diff.CompareFiles(before, after)
 	if err != nil {
 		log.Fatal(err, before, after)
@@ -86,60 +84,8 @@ func CompareFiles(before, after, path string, breakpoint int) {
 		fmt.Println("Image is same!")
 		return
 	}
-	t := time.Now()
-	ft := t.Format("20200101123045")
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
-	destDir := "./results/"
-	var f *os.File
-	f, err = os.Create(destDir + diffName)
-	if err != nil {
-		if os.IsNotExist(err) {
-			os.Mkdir("results", os.ModePerm)
-			f, _ = os.Create(destDir + diffName)
-		} else {
-			log.Fatal(err)
-		}
-	}
 	buf := new(bytes.Buffer)
 	png.Encode(buf, diff)
-	f.Write(buf.Bytes())
-	fmt.Println("diff has written into " + destDir + diffName)
-}
-
-// WIP refactor CompareFiles
-func newcomparefiles(before, after string) (*image.Image, error) {
-	d, p, err := diff.CompareFiles(before, after)
-	if err != nil {
-		return nil, err
-	}
-	if p == 0.0 {
-		fmt.Println("No Difference!")
-		return nil, nil
-	}
-	return &d, nil
-}
-
-func newDiffFileName(path string, breakpoint int) string {
-	t := time.Now()
-	ft := t.Format("20200101123045")
-	diffName := "diff-" + path + "-" + strconv.Itoa(breakpoint) + "px" + "-" + ft + ".png"
-	destDir := "./results/"
-	return destDir + diffName
-}
-
-func writeimagetofile(i image.Image, path string, breakpoint int) {
-	resultfilename := newDiffFileName(path, breakpoint)
-	var f *os.File
-	f, err := os.Create(resultfilename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			os.Mkdir("results", os.ModePerm)
-			f, _ = os.Create(resultfilename)
-		} else {
-			log.Fatal(err)
-		}
-	}
-	buf := new(bytes.Buffer)
-	png.Encode(buf, i)
-	f.Write(buf.Bytes())
+	w.Write(buf.Bytes())
+	fmt.Println("Images has diffs!")
 }

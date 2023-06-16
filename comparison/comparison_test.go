@@ -1,8 +1,7 @@
 package comparison
 
 import (
-	"io/fs"
-	"io/ioutil"
+	"bytes"
 	"os"
 	"reflect"
 	"testing"
@@ -136,31 +135,16 @@ func TestCompareFiles(t *testing.T) {
 			diff:       true,
 		},
 	}
-
-	defer func() {
-		os.RemoveAll("./results")
-	}()
-
 	for _, tt := range cases {
-		beforelen := countFiles("./results")
-		CompareFiles(tt.before, tt.after, tt.path, tt.breakpoint)
-		afterlen := countFiles(("./results"))
+		w := new(bytes.Buffer)
+		CompareFiles(w, tt.before, tt.after, tt.path, tt.breakpoint)
+		got := w.String()
 
-		if tt.diff {
-			if beforelen == afterlen {
-				t.Error(beforelen, afterlen)
-			}
-		} else {
-			if beforelen != afterlen {
-				t.Error(beforelen, afterlen)
-			}
+		if tt.diff && len(got) == 0 {
+			t.Error("Expected diff but got nothing")
+		}
+		if !tt.diff && len(got) != 0 {
+			t.Errorf("Expected no diff but got diff: %s", got)
 		}
 	}
-}
-
-func countFiles(dirpath string) int {
-	files, _ := ioutil.ReadDir(dirpath)
-	var filesInfos []fs.FileInfo
-	filesInfos = append(filesInfos, files...)
-	return len(filesInfos)
 }
