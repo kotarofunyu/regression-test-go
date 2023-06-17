@@ -10,6 +10,7 @@ import (
 var originalArgs = os.Args
 
 func Test_diffurlCmd(t *testing.T) {
+	defer CleanUpFiles()
 	cases := []struct {
 		beforeurl   string
 		afterurl    string
@@ -59,4 +60,10 @@ func PickStdout(t *testing.T, fnc func()) string {
 	}
 	s := buffer.String()
 	return s[:len(s)-1]
+}
+
+// TODO: 直接ファイルを書き込まないようにしたい
+func CleanUpFiles() {
+	os.RemoveAll("captures")
+	os.RemoveAll("results")
 }
