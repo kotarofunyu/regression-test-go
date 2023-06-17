@@ -129,7 +129,7 @@ func TestCompareFiles(t *testing.T) {
 		},
 		{
 			before:     "../testdata/sample.png",
-			after:      "../testdata/sample_copy.png",
+			after:      "../testdata/sample_diff.png",
 			path:       "sample",
 			breakpoint: 768,
 			diff:       true,
